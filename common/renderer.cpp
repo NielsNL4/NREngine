@@ -38,19 +38,10 @@ Renderer::~Renderer() {
 
 }
 
-void Renderer::processInput(GLFWwindow *window, Camera camera) {
+void Renderer::processInput(GLFWwindow *window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
 void Renderer::makeTriangle() {
@@ -128,56 +119,11 @@ void Renderer::draw() {
 }
 
 void Renderer::DrawSkybox() {
-	float skyboxVertices[] = {
-		// positions
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f
-	};
-
 	glGenVertexArrays(1, &skyboxVAO);
 	glGenBuffers(1, &skyboxVBO);
 	glBindVertexArray(skyboxVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skybox.skyboxVertices), &skybox.skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 }
@@ -205,6 +151,7 @@ void Renderer::renderScene(Shader modelShader, Shader lampShader, mat4 view, mat
 }
 
 void Renderer::renderSkybox(Shader skyboxShader, mat4 view, mat4 projection, Camera camera){
+	GLuint cubeMap = skybox.loadSkybox(faces);
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP,cubeMap);

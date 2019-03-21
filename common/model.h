@@ -1,14 +1,18 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <glad/glad.h> 
+#include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "common/external/stb_image.h"
+#include <external/assimp/include/Importer.hpp>
+#include <external/assimp/include/Scene.h>
+#include <external/assimp/include/postprocess.h>
 
 #include "mesh.h"
 #include "shader.h"
+#include "external/stb_image.h"
+#include "texture.h"
 
 #include <string>
 #include <fstream>
@@ -16,6 +20,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+
 using namespace std;
 
 class Model
@@ -41,8 +46,7 @@ private:
 	/*  Model Data  */
 	vector<Mesh> meshes;
 	string directory;
-	vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-
+	vector<MeshTexture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
 										/*  Functions   */
 										// Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 	void loadModel(string path)
@@ -89,7 +93,7 @@ private:
 		// Data to fill
 		vector<Vertex> vertices;
 		vector<GLuint> indices;
-		vector<Texture> textures;
+		vector<MeshTexture> textures;
 
 		// Walk through each of the mesh's vertices
 		for (GLuint i = 0; i < mesh->mNumVertices; i++)
@@ -150,11 +154,11 @@ private:
 			// Normal: texture_normalN
 
 			// 1. Diffuse maps
-			vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+			vector<MeshTexture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 			// 2. Specular maps
-			vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+			vector<MeshTexture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		}
 
@@ -164,9 +168,9 @@ private:
 
 	// Checks all material textures of a given type and loads the textures if they're not loaded yet.
 	// The required info is returned as a Texture struct.
-	vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
+	vector<MeshTexture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
 	{
-		vector<Texture> textures;
+		vector<MeshTexture> textures;
 
 		for (GLuint i = 0; i < mat->GetTextureCount(type); i++)
 		{
@@ -189,8 +193,9 @@ private:
 
 			if (!skip)
 			{   // If texture hasn't been loaded already, load it
-				Texture texture;
-				texture.id = texture.TextureFromFile(str.C_Str(), this->directory);
+				MeshTexture texture;
+				Texture tex;
+				texture.id = tex.TextureFromFile(str.C_Str(), this->directory);
 				texture.type = typeName;
 				texture.path = str;
 				textures.push_back(texture);
@@ -198,10 +203,8 @@ private:
 				this->textures_loaded.push_back(texture);  // Store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
 			}
 		}
-
 		return textures;
 	}
 };
-
 
 #endif

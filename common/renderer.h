@@ -22,7 +22,7 @@ public:
 	virtual ~Renderer();
 	GLFWwindow* window;
 
-	void processInput(GLFWwindow* window, Camera camera);
+	void processInput(GLFWwindow* window);
 	void makeTriangle();
 	void cleanUp();
 	void draw();
@@ -40,8 +40,7 @@ public:
 		"assets/skybox/front.png",
 		"assets/skybox/back.png"
 	};
-	GLuint cubeMap = skybox.LoadSkybox(faces);
-
+	
 	unsigned int vertexShader;
 	unsigned int fragmentShader;
 

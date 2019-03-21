@@ -34,7 +34,8 @@ int main()
 
 	// render loop
 	while (!glfwWindowShouldClose(renderer.window)) {
-		renderer.processInput(renderer.window, camera);
+		renderer.processInput(renderer.window);
+		camera.processInput(renderer.window);
 
 		GLfloat currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;

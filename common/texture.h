@@ -7,9 +7,6 @@
 #include <string>
 #include <fstream>
 
-#include <external/assimp/include/Importer.hpp>
-#include <external/assimp/include/Scene.h>
-#include <external/assimp/include/postprocess.h>
 
 #include "external/stb_image.h"
 #include "shader.h"
@@ -19,11 +16,6 @@ public:
 	Texture();
 	virtual ~Texture();
 	GLint TextureFromFile(const char *path, std::string directory);
-
-	GLuint id;
-	std::string type;
-	aiString path;
-
 private:
 
 };
