@@ -31,7 +31,7 @@ public:
 	void renderSkybox(Shader skyboxShader, mat4 view, mat4 projection, Camera camera);
 
 	Skybox skybox;
-
+	GLuint cubeMap;
 	vector<string> faces{
 		"assets/skybox/right.png",
 		"assets/skybox/left.png",
