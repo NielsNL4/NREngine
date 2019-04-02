@@ -64,6 +64,7 @@ public:
 	 Expects a shader
 	 */
 	void Draw(Shader shader) {
+		
 		// Bind appropriate textures
 		GLuint diffuseNr = 1;
 		GLuint specularNr = 1;

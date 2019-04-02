@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include <iostream>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -40,10 +41,6 @@ public:
 	float MovementSpeed;
 	float MouseSensitivity;
 	float Zoom;
-
-    // timing
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
 
     float lastX = 1280 / 2.0f;
     float lastY = 720 / 2.0f;
@@ -124,28 +121,35 @@ public:
 			Zoom = 45.0f;
 	}
 
-    void processInput(GLFWwindow *window) {
+	void processInput(GLFWwindow *window, float deltaTime) {
 
-	    // per-frame time logic
-        // --------------------
-        float currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            ProcessKeyboard(FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			glfwSetWindowShouldClose(window, true);
+		}
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			ProcessKeyboard(FORWARD, deltaTime);
+			std::cout << "Forward" << std::endl;
+		}
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
             ProcessKeyboard(BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			std::cout << "Backward" << std::endl;
+		}
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
             ProcessKeyboard(LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			std::cout << "Left" << std::endl;
+		}
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
             ProcessKeyboard(RIGHT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			std::cout << "Right" << std::endl;
+		}
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
             ProcessKeyboard(UP, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+			std::cout << "Up" << std::endl;
+		}
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
             ProcessKeyboard(DOWN, deltaTime);
+			std::cout << "Down" << std::endl;
+		}
     }
 
     void mouse_callback(GLFWwindow* window, float xpos, float ypos) {

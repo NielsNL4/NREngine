@@ -1,17 +1,25 @@
 #include "renderer.h"
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 Renderer::Renderer() {
 
+	objectShader = NULL;
+	window = NULL;
+
+	this->init();
+}
+
+Renderer::~Renderer() {
+
+}
+
+int Renderer::init() {
 	glfwInit();
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-	#endif
 
 	window = glfwCreateWindow(SWIDTH, SHEIGHT, "NREngine", NULL, NULL);
 	if (window == NULL) {
@@ -20,24 +28,37 @@ Renderer::Renderer() {
 	}
 	glfwMakeContextCurrent(window);
 
+	glfwSwapInterval(1);
+
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
 
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+	glEnable(GL_DEPTH_TEST);
+
+	objectShader = new Shader("../common/shaders/modelVertex.vs", "../common/shaders/modelFrag.fs");
+	skyboxShader = new Shader("../common/shaders/skyboxVertex.vs", "../common/shaders/skyboxFrag.fs");
+	lightShader = new Shader("../common/shaders/lampVertex.vs", "../common/shaders/lampFrag.fs");
+
 	cubeMap = skybox.loadSkybox(faces);
 
 	makeTriangle();
 	DrawSkybox();
-}
 
-Renderer::~Renderer() {
+	skyboxShader->use();
+	skyboxShader->setInt("skybox", 0);
 
+	printf("Renderer::init() done\n");
+
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	return 0;
 }
 
 void Renderer::processInput(GLFWwindow *window) {
@@ -130,34 +151,92 @@ void Renderer::DrawSkybox() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 }
 
-void Renderer::renderScene(Shader modelShader, Shader lampShader, mat4 view, mat4 projection, vec3 lightPos, Model lampModel, Model objectModel){
-	
-	// Draw the loaded model
-	mat4 model;
-	model = glm::translate(model, glm::vec3(0.0f, 1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-	model = glm::scale(model, glm::vec3(0.5f,0.5f,0.5f));	// It's a bit too big for our scene, so scale it down
-	modelShader.setMat4("model", model);
+void Renderer::renderScene(Scene* scene){
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	objectModel.Draw(modelShader);
+	_viewMatrix = scene->camera->GetViewMatrix();
 
-	lampShader.use();
-	lampShader.setMat4("projection", projection);
-	lampShader.setMat4("view", view);
+	_projectionMatrix = perspective(45.0f, (float)SWIDTH / (float)SHEIGHT, 0.1f, 10000.0f);
 
-	model = mat4();
-	model = translate(model, lightPos);
-	model = scale(model, vec3(0.2));
-	lampShader.setMat4("model", model);
+	mat4 modelMatrix = mat4(1.0f);
 
-	lampModel.Draw(lampShader);
+	this->renderEntity(modelMatrix, scene, scene->camera);
+
+	renderSkybox();
+
+	glfwSwapBuffers(window);
 }
 
-void Renderer::renderSkybox(Shader skyboxShader, mat4 view, mat4 projection, Camera camera){
+void Renderer::renderEntity(mat4 modelMatrix, Entity* entity, Camera* camera) {
+	vec3 position = vec3(entity->position.x, entity->position.y, entity->position.z);
+	vec3 rotation = vec3(entity->rotation.x, entity->rotation.y, entity->rotation.z);
+	vec3 scale = vec3(entity->scale.x, entity->scale.y, entity->scale.y);
+
+	mat4 transformMatrix = translate(mat4(1.0f), position);
+	mat4 rotationMatrix = eulerAngleYXZ(rotation.y, rotation.x, rotation.z);
+	mat4 scaleMatrix = glm::scale(mat4(1.0f), scale);
+
+	mat4 mm = transformMatrix * rotationMatrix * scaleMatrix;
+
+	modelMatrix *= mm;
+
+	Model* model = entity->_model;
+	if (model != NULL) {
+		this->renderObject(modelMatrix, model);
+	}
+
+	Model* lightModel = entity->lightModel;
+	if (entity->light) {
+		this->renderLight(modelMatrix, lightModel);
+	}
+
+	vector<Entity*> children = entity->children;
+	vector<Entity*>::iterator child;
+	for (child = children.begin(); child != children.end(); child++) {
+		this->renderEntity(modelMatrix, *child, camera);
+	}
+	
+}
+
+void Renderer::renderObject(const mat4 modelMatrix, Model* model) {
+	Shader* shader = objectShader;
+
+	shader->use();
+
+	shader->setVec3("light.position", vec3(0.0f, 0.0f, -3.0f));
+	shader->setVec3("viewPos", vec3(0.0f, 0.0f, 0.0f));
+
+	shader->setVec3("light.ambient", 0.5f, 0.5f, 0.5f);
+	shader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+	shader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+	shader->setFloat("material.shininess", 8.0f);
+
+	shader->setMat4("projection", _projectionMatrix);
+	shader->setMat4("view", _viewMatrix);
+	shader->setMat4("model", modelMatrix);
+	
+	model->Draw(*shader);
+}
+
+void Renderer::renderLight(const mat4 modelMatrix, Model* model) {
+	Shader* shader = lightShader;
+
+	shader->use();
+
+	shader->setMat4("projection", _projectionMatrix);
+	shader->setMat4("view", _viewMatrix);
+	shader->setMat4("model", modelMatrix);
+
+	model->Draw(*shader);
+}
+
+void Renderer::renderSkybox(){
 	glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-	skyboxShader.use();
-	view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-	skyboxShader.setMat4("view", view);
-	skyboxShader.setMat4("projection", projection);
+	skyboxShader->use();
+	
+	skyboxShader->setMat4("view", _viewMatrix);
+	skyboxShader->setMat4("projection", _projectionMatrix);
 
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);

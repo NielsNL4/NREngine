@@ -71,12 +71,22 @@ add_library(common
 	common/texture.h
 	common/skybox.h
 	common/scene.cpp
-	common/scene.h)
+	common/scene.h
+	common/entity.cpp
+	common/entity.h
+	common/core.cpp
+	common/core.h)
 
 
 # program
 add_executable(NREngine
 	NREngine/program.cpp
+	NREngine/myscene.cpp
+	NREngine/myscene.h
+	NREngine/myentity.cpp
+	NREngine/myentity.h
+	NREngine/lamp.cpp
+	NREngine/lamp.h
 )
 
 target_link_libraries(NREngine

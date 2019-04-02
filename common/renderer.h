@@ -8,10 +8,12 @@
 #include "camera.h"
 #include "model.h"
 #include "skybox.h"
+#include "scene.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/euler_angles.hpp>
 using namespace glm;
 using namespace std;
 
@@ -22,13 +24,22 @@ public:
 	virtual ~Renderer();
 	GLFWwindow* window;
 
+	Shader* objectShader;
+	Shader* skyboxShader;
+	Shader* lightShader;
+
 	void processInput(GLFWwindow* window);
 	void makeTriangle();
 	void cleanUp();
 	void draw();
 	void DrawSkybox();
-	void renderScene(Shader modelShader, Shader lampShader, mat4 view, mat4 projection, vec3 lightPos, Model slampModel, Model objectModel);
-	void renderSkybox(Shader skyboxShader, mat4 view, mat4 projection, Camera camera);
+	void renderScene(Scene* scene);
+	void renderSkybox();
+	void renderEntity(mat4 modelMatrix, Entity* entity, Camera* camera);
+	void renderObject(const mat4 modelMatrix, Model* model);
+	void renderLight(const mat4 modelMatrix, Model* model);
+
+	int init();
 
 	Skybox skybox;
 	GLuint cubeMap;
@@ -59,6 +70,8 @@ public:
 
 private:
 
+	mat4 _projectionMatrix;
+	mat4 _viewMatrix;
 
 };
 
